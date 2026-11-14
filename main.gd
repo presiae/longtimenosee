@@ -1,10 +1,4 @@
 extends Node2D
-## BOUNCE BACK - a 2D top-down prison escape.
-## Every time you get caught, your run becomes an "echo": a ghost that replays
-## your path on the next attempt. Guards and inmates are drawn to echoes,
-## so use them to pull attention away while you slip through.
-##
-## Controls: WASD / Arrow keys = move, R = full restart (clears all echoes)
 
 const W := 1280
 const H := 720
@@ -17,25 +11,25 @@ const INMATE_R := 8.0
 const GUARD_PATROL_SPEED := 85.0
 const GUARD_CHASE_SPEED := 135.0
 const VIEW_DIST := 190.0
-const VIEW_HALF_FOV := 0.55 # radians (~31 degrees each side)
-const NEAR_SENSE := 42.0    # guards notice anything this close, even behind them
+const VIEW_HALF_FOV := 0.55 
+const NEAR_SENSE := 42.0    
 const CATCH_DIST := 19.0
-const CONFUSE_TIME := 3.5   # how long a guard freezes after "catching" an echo
+const CONFUSE_TIME := 3.5  
 
 const INMATE_VIEW := 140.0
 
-const RECORD_STEP := 0.05   # seconds between recorded path points
+const RECORD_STEP := 0.05  
 const MAX_ECHOES := 5
-const ECHO_LINGER := 4.0    # seconds an echo stays after finishing its path
+const ECHO_LINGER := 4.0    
 
 
-# ---------------------------------------------------------------- data classes
+
 class Guard:
 	var points: Array[Vector2] = []
 	var wp := 1
 	var pos := Vector2.ZERO
 	var facing := 0.0
-	var mode := "patrol" # patrol | chase | investigate | confused
+	var mode := "patrol" 
 	var target := Vector2.ZERO
 	var wait := 0.0
 	var confused := 0.0
@@ -47,8 +41,8 @@ class Inmate:
 	var pos := Vector2.ZERO
 	var target := Vector2.ZERO
 	var wait := 1.0
-	var gawking := false   # distracted by an echo
-	var snitching := false # saw the player and is calling a guard
+	var gawking := false  
+	var snitching := false 
 	var cooldown := 0.0
 
 
@@ -64,7 +58,7 @@ class Poof:
 	var t := 0.0
 
 
-# ---------------------------------------------------------------------- level
+
 var walls: Array[Rect2] = []
 var exit_rect := Rect2(1190, 60, 50, 90)
 var key_pos := Vector2(510, 100)
@@ -81,7 +75,7 @@ var inmate_homes: Array = [
 	Vector2(1120, 520), Vector2(150, 330),
 ]
 
-# ---------------------------------------------------------------------- state
+
 var player_pos := Vector2.ZERO
 var has_key := false
 var run_time := 0.0
@@ -93,7 +87,7 @@ var guards: Array[Guard] = []
 var inmates: Array[Inmate] = []
 var poofs: Array[Poof] = []
 
-var state := "play" # play | caught | won
+var state := "play" 
 var state_timer := 0.0
 var attempt := 1
 
@@ -107,25 +101,25 @@ func _ready() -> void:
 
 func _build_level() -> void:
 	walls.assign([
-		# outer border
+		 outer border
 		Rect2(0, 0, W, 20), Rect2(0, H - 20, W, 20),
 		Rect2(0, 0, 20, H), Rect2(W - 20, 0, 20, H),
-		# cell block wall (door gap y 260..340)
+		 cell block wall (door gap y 260..340)
 		Rect2(300, 20, 20, 240), Rect2(300, 340, 20, 360),
-		# middle room cover
+		 middle room cover
 		Rect2(420, 180, 180, 20), Rect2(420, 480, 20, 160),
-		# wall to yard (gap y 440..520)
+		 wall to yard (gap y 440..520)
 		Rect2(700, 20, 20, 420), Rect2(700, 520, 20, 180),
-		# yard cover
+		 yard cover
 		Rect2(820, 300, 80, 20),
-		# wall to exit room (gap y 200..280)
+		 wall to exit room (gap y 200..280)
 		Rect2(980, 20, 20, 180), Rect2(980, 280, 20, 420),
-		# exit room cover
+		 exit room cover
 		Rect2(1090, 320, 110, 20),
 	])
 
 
-# ------------------------------------------------------------------ run setup
+
 func _full_reset() -> void:
 	echoes.clear()
 	attempt = 1
@@ -184,7 +178,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_full_reset()
 
 
-# ----------------------------------------------------------------- main loop
+
 func _process(delta: float) -> void:
 	if state == "play":
 		_update_play(delta)
@@ -199,7 +193,7 @@ func _process(delta: float) -> void:
 func _update_play(delta: float) -> void:
 	run_time += delta
 
-	# --- player movement
+	
 	var dir := Vector2(
 		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT))
 		- float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)),
@@ -209,7 +203,7 @@ func _update_play(delta: float) -> void:
 		dir = dir.normalized()
 	player_pos = _try_move(player_pos, dir * PLAYER_SPEED * delta, PLAYER_R)
 
-	# --- record path for the next echo
+	
 	record_timer += delta
 	while record_timer >= RECORD_STEP:
 		record_timer -= RECORD_STEP
@@ -221,7 +215,7 @@ func _update_play(delta: float) -> void:
 	for m in inmates:
 		_update_inmate(m, delta)
 
-	# --- guards catching the player or an echo
+	
 	for g in guards:
 		if g.confused > 0.0:
 			continue
@@ -237,7 +231,7 @@ func _update_play(delta: float) -> void:
 				p.pos = e.pos
 				poofs.append(p)
 
-	# --- key and exit
+#saaravi #kumars single hit him up +61 416 233 710
 	if not has_key and player_pos.distance_to(key_pos) < 18.0:
 		has_key = true
 	if has_key and exit_rect.grow(PLAYER_R).has_point(player_pos):
@@ -266,7 +260,7 @@ func _update_poofs(delta: float) -> void:
 			poofs.remove_at(i)
 
 
-# --------------------------------------------------------------------- guards
+ 
 func _update_guard(g: Guard, delta: float) -> void:
 	if g.confused > 0.0:
 		g.confused -= delta
@@ -276,7 +270,7 @@ func _update_guard(g: Guard, delta: float) -> void:
 			_recover_patrol(g)
 		return
 
-	# Perception: player and echoes look identical to a guard. Nearest wins.
+	 Perception: player and echoes look identical to a guard. Nearest wins.
 	var found := false
 	var best := INF
 	if _guard_sees(g, player_pos):
@@ -306,7 +300,7 @@ func _update_guard(g: Guard, delta: float) -> void:
 			var there := _move_guard(g, g.target, GUARD_PATROL_SPEED * 1.2, delta)
 			if there or g.stuck > 1.0:
 				g.wait -= delta
-				g.facing += delta * 2.0 # look around
+				g.facing += delta * 2.0  look around
 				if g.wait <= 0.0:
 					g.mode = "patrol"
 					_recover_patrol(g)
@@ -328,7 +322,7 @@ func _guard_sees(g: Guard, p: Vector2) -> bool:
 	return _los_clear(g.pos, p)
 
 
-## Returns true once the guard has arrived at `to`.
+ Returns true once the guard has arrived at `to`.
 func _move_guard(g: Guard, to: Vector2, speed: float, delta: float) -> bool:
 	var to_vec := to - g.pos
 	var dist := to_vec.length()
@@ -346,7 +340,7 @@ func _move_guard(g: Guard, to: Vector2, speed: float, delta: float) -> bool:
 	return false
 
 
-## After a chase, head back to a patrol point the guard can actually reach.
+ After a chase, head back to a patrol point the guard can actually reach.
 func _recover_patrol(g: Guard) -> void:
 	g.stuck = 0.0
 	for i in g.points.size():
@@ -354,7 +348,7 @@ func _recover_patrol(g: Guard) -> void:
 		if _los_clear(g.pos, g.points[idx]):
 			g.wp = idx
 			return
-	g.pos = g.points[g.wp] # fallback: walk-back skipped
+	g.pos = g.points[g.wp]  fallback: walk-back skipped
 
 
 func _alert_nearest_guard(p: Vector2) -> void:
@@ -373,13 +367,13 @@ func _alert_nearest_guard(p: Vector2) -> void:
 		best.wait = 2.0
 
 
-# -------------------------------------------------------------------- inmates
+
 func _update_inmate(m: Inmate, delta: float) -> void:
 	m.cooldown = maxf(0.0, m.cooldown - delta)
 	m.gawking = false
 	m.snitching = false
 
-	# 1) Echoes grab their attention first - they crowd around and stop snitching.
+	
 	var see_echo := false
 	var echo_pos := Vector2.ZERO
 	var best := INF
@@ -397,7 +391,7 @@ func _update_inmate(m: Inmate, delta: float) -> void:
 			m.pos = _try_move(m.pos, (echo_pos - m.pos).normalized() * 70.0 * delta, INMATE_R)
 		return
 
-	# 2) Otherwise, if they see YOU they tell the nearest guard.
+	 
 	if m.pos.distance_to(player_pos) < INMATE_VIEW and _los_clear(m.pos, player_pos):
 		m.snitching = true
 		if m.cooldown <= 0.0:
@@ -405,7 +399,7 @@ func _update_inmate(m: Inmate, delta: float) -> void:
 			_alert_nearest_guard(player_pos)
 		return
 
-	# 3) Idle wandering.
+	
 	if m.wait > 0.0:
 		m.wait -= delta
 		return
@@ -419,7 +413,7 @@ func _update_inmate(m: Inmate, delta: float) -> void:
 		m.pos = _try_move(m.pos, to.normalized() * 45.0 * delta, INMATE_R)
 
 
-# -------------------------------------------------------------------- physics
+
 func _try_move(pos: Vector2, motion: Vector2, r: float) -> Vector2:
 	var p := pos
 	var nx := Vector2(p.x + motion.x, p.y)
@@ -463,7 +457,7 @@ func _ray_dist(origin: Vector2, ang: float, maxd: float) -> float:
 	return maxd
 
 
-# -------------------------------------------------------------------- drawing
+ 
 func _text_c(p: Vector2, s: String, size: int, col: Color) -> void:
 	draw_string(ThemeDB.fallback_font, p + Vector2(-400, 0), s,
 		HORIZONTAL_ALIGNMENT_CENTER, 800, size, col)
@@ -474,7 +468,7 @@ func _text_l(p: Vector2, s: String, size: int, col: Color) -> void:
 
 
 func _draw() -> void:
-	# floor zones
+	 floor zones
 	draw_rect(Rect2(0, 0, W, H), Color(0.11, 0.11, 0.13))
 	draw_rect(Rect2(20, 20, 280, H - 40), Color(0.15, 0.15, 0.19))
 	draw_rect(Rect2(720, 20, 260, H - 40), Color(0.13, 0.15, 0.13))
@@ -487,18 +481,18 @@ func _draw() -> void:
 	for w in walls:
 		draw_rect(w, Color(0.38, 0.38, 0.45))
 
-	# exit door
+	 exit door
 	var door_col := Color(0.2, 0.9, 0.4) if has_key else Color(0.7, 0.2, 0.2)
 	draw_rect(exit_rect, door_col)
 	_text_c(exit_rect.position + Vector2(25, -8), "EXIT" if has_key else "LOCKED", 14, door_col)
 
-	# key
+	 key
 	if not has_key:
 		draw_circle(key_pos, 7.0, Color(1.0, 0.85, 0.2))
 		draw_arc(key_pos, 12.0 + sin(Time.get_ticks_msec() * 0.005) * 2.0, 0, TAU, 20, Color(1, 0.85, 0.2, 0.5), 1.5)
 		_text_c(key_pos + Vector2(0, -18), "KEY", 12, Color(1, 0.85, 0.2))
 
-	# echo trails + echoes
+	 echo trails + echoes
 	for e in echoes:
 		if e.path.size() > 1:
 			draw_polyline(PackedVector2Array(e.path), Color(0.4, 0.9, 1.0, 0.12), 2.0)
@@ -509,11 +503,11 @@ func _draw() -> void:
 			var pulse := 15.0 + sin(Time.get_ticks_msec() * 0.006) * 3.0
 			draw_arc(e.pos, pulse, 0, TAU, 24, Color(0.5, 0.95, 1.0, 0.45), 1.5)
 
-	# vision cones
+	 vision cones
 	for g in guards:
 		_draw_cone(g)
 
-	# inmates
+	 inmates
 	for m in inmates:
 		draw_circle(m.pos, INMATE_R, Color(0.95, 0.6, 0.2))
 		if m.snitching:
@@ -521,7 +515,7 @@ func _draw() -> void:
 		elif m.gawking:
 			_text_c(m.pos + Vector2(0, -14), "*", 18, Color(0.5, 0.95, 1.0))
 
-	# guards
+	 guards
 	for g in guards:
 		var col := Color(0.3, 0.5, 1.0)
 		var mark := ""
@@ -540,11 +534,11 @@ func _draw() -> void:
 		if mark != "":
 			_text_c(g.pos + Vector2(0, -18), mark, 20, col)
 
-	# poofs
+	 poofs
 	for p in poofs:
 		draw_arc(p.pos, 8.0 + p.t * 60.0, 0, TAU, 20, Color(0.5, 0.95, 1.0, 1.0 - p.t / 0.7), 2.0)
 
-	# player
+	 player
 	draw_circle(player_pos, PLAYER_R, Color.WHITE)
 	if has_key:
 		draw_circle(player_pos, 4.0, Color(1.0, 0.85, 0.2))
